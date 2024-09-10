@@ -1,0 +1,219 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POMODORO</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="pomodoro">
+        <div id="clock">
+          <div id="timer">
+            <div id="title">Pronto?</div>
+            <div id="countdown">
+              <span id="minutes">30</span>
+              <span id="seconds">00</span>
+            </div>
+            <div id="controls" class="reset">
+              <div id="start"><i class="fas fa-play"></i> Iniciar</div>
+              <div id="pause"><i class="fas fa-pause"></i> Pausar</div>
+              <div id="reset"><i class="fas fa-sync-alt"></i> Reiniciar</div>
+            </div>
+          </div>
+        </div>
+        <div id="options">
+          <div id="session">
+            <i id="incrSession" class="fas fa-angle-double-up"></i>
+            <span class="option-title">Sessão</span>
+            <input id="sessionInput" type="number" value="30" max="60" min="5">
+            <i id="decrSession" class="fas fa-angle-double-down"></i>
+          </div>
+          <div id="break">
+            <i id="incrBreak" class="fas fa-angle-double-up"></i>
+            <span class="option-title">Intervalo</span>
+            <input id="breakInput" type="number" value="5" max="10" min="1">
+            <i id="decrBreak" class="fas fa-angle-double-down"></i>
+          </div>
+        </div>
+      </div>
+      
+      <audio id="alarm-sound" src="clock-alarm-8761.mp3" preload="auto"></audio>
+
+      <footer style="text-align: center; margin-top: 20px;">
+        Developed by: Ranieu Sousa
+    </footer>
+  
+  </body> 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script>
+    $(() => {
+  
+      let $audio = $("#alarm-sound").prop("volume", 1),
+          $theme = $(".theme"),
+          $title = $("#title"),
+          $controls = $("#controls"),
+          $options = $("#options"),
+          $minutes = $("#minutes"),
+          $seconds = $("#seconds"),
+          $start = $("#start"),
+          $pause = $("#pause"),
+          $reset = $("#reset"),
+          $incrSession = $("#incrSession"),
+          $sessionInput = $("#sessionInput"),
+          $decrSession = $("#decrSession"),
+          $incrBreak = $("#incrBreak"),
+          $breakInput = $("#breakInput"),
+          $decrBreak = $("#decrBreak"),
+          breakLength = 5 * 60,
+          breakMax = 10,
+          breakMin = 1,
+          sessionLength = 30 * 60,
+          sessionMax = 60,
+          sessionMin = 5,
+          sessionNum = 0,
+          countdown,
+          countType,
+          remainingTime = sessionLength;
+  
+      init();
+  
+      function init(){
+        $audio.prop("volume", 1);
+        $incrSession.click(() => incrSession());
+        $decrSession.click(() => decrSession());
+        $incrBreak.click(() => incrBreak());
+        $decrBreak.click(() => decrBreak());
+        $sessionInput.on("change", e => updateSession(e.target.value));
+        $breakInput.on("change", e => updateBreak(e.target.value));
+        $start.click(() => { if (countType === "break"){ startBreak(); } else { startSession(); } });
+        $pause.click(() => pause());
+        $reset.click(() => reset());
+        $theme.click(e => audioSelect(e));
+      }
+  
+      function startSession(){
+        sessionNum++;
+        countType = "session";
+        $options.slideUp(143);
+        $controls.removeClass().addClass("started");
+        $title.fadeOut(43, function(){
+          $(this).html("Sessão " + sessionNum).fadeIn();
+        });
+        start(remainingTime || sessionLength);
+      }
+  
+      function startBreak(){
+        countType = "break";
+        $title.fadeOut(43, function(){
+          $(this).html("Intervalo " + sessionNum).fadeIn();
+        });
+        start(remainingTime || breakLength);
+      }
+  
+      function start(timeLeft){
+        clearInterval(countdown);
+        countdown = setInterval(() => {
+          timeLeft--;
+          remainingTime = timeLeft;
+          let minLeft = Math.floor(timeLeft / 60),
+              secLeft = timeLeft - minLeft * 60;
+          updateMinutes(minLeft);
+          updateSeconds(secLeft < 10 ? "0" + secLeft : secLeft);
+          if (timeLeft < 1){
+            clearInterval(countdown);
+            $("#alarm-sound")[0].play(); // Toca o áudio
+            if (countType === "session"){
+              startBreak();
+            } else {
+              startSession();
+            }
+          }
+        }, 1000);
+      }
+  
+      function pause(){
+        sessionNum--;
+        clearInterval(countdown);
+        $options.slideDown(143);
+        $controls.removeClass().addClass("paused");
+        $title.fadeOut(43, function(){
+          $(this).html("Pausado").fadeIn();
+        });
+      }
+  
+      function reset(){
+        clearInterval(countdown);
+        updateMinutes(sessionLength / 60);
+        updateSeconds("00");
+        countType = undefined;
+        $controls.removeClass().addClass("reset");
+        $title.html("Pronto?");
+        remainingTime = sessionLength;
+      }
+  
+      function incrSession(){
+        let num = Number($sessionInput.val());
+        num = num + (num === sessionMax ? 0 : 1);
+        sessionLength = num * 60;
+        updateSession(num);
+        updateMinutes(num);
+        updateSeconds("00");
+        reset();
+      }
+  
+      function decrSession(){
+        let num = Number($sessionInput.val());
+        num = num - (num === sessionMin ? 0 : 1);
+        sessionLength = num * 60;
+        updateSession(num);
+        updateMinutes(num);
+        updateSeconds("00");
+        reset();
+      }
+  
+      function incrBreak(){
+        let num = Number($breakInput.val());
+        num = num + (num === breakMax ? 0 : 1);
+        breakLength = num * 60;
+        updateBreak(num);
+        reset();
+      }
+  
+      function decrBreak(){
+        let num = Number($breakInput.val());
+        num = num - (num === breakMin ? 0 : 1);
+        breakLength = num * 60;
+        updateBreak(num);
+        reset();
+      }
+  
+      function updateMinutes(num){
+        $minutes.text(num);
+      }
+  
+      function updateSeconds(num){
+        $seconds.text(num);
+      }
+  
+      function updateSession(num){
+        num = num < sessionMin ? sessionMin : num > sessionMax ? sessionMax : num;
+        $sessionInput.val(num).blur();
+        updateMinutes(num);
+        updateSeconds("00");
+        sessionLength = num * 60;
+        reset();
+      }
+  
+      function updateBreak(num){
+        $breakInput.val(num < breakMin ? breakMin : num > breakMax ? breakMax : num).blur();
+        breakLength = num * 60;
+        reset();
+      }
+  
+     
+  
+    });
+  </script>
+  
+</html>
