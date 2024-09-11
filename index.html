@@ -112,25 +112,33 @@
       }
   
       function start(timeLeft){
-        clearInterval(countdown);
-        countdown = setInterval(() => {
-          timeLeft--;
-          remainingTime = timeLeft;
-          let minLeft = Math.floor(timeLeft / 60),
-              secLeft = timeLeft - minLeft * 60;
-          updateMinutes(minLeft);
-          updateSeconds(secLeft < 10 ? "0" + secLeft : secLeft);
-          if (timeLeft < 1){
-            clearInterval(countdown);
-            $("#alarm-sound")[0].play(); // Toca o áudio
-            if (countType === "session"){
-              startBreak();
-            } else {
-              startSession();
-            }
-          }
-        }, 1000);
+  clearInterval(countdown);
+  let lastTime = Date.now();
+
+  countdown = setInterval(() => {
+    const currentTime = Date.now();
+    const deltaTime = Math.floor((currentTime - lastTime) / 1000);
+    lastTime = currentTime;
+
+    timeLeft -= deltaTime;
+    remainingTime = timeLeft;
+
+    let minLeft = Math.floor(timeLeft / 60),
+        secLeft = timeLeft - minLeft * 60;
+    updateMinutes(minLeft);
+    updateSeconds(secLeft < 10 ? "0" + secLeft : secLeft);
+
+    if (timeLeft < 1){
+      clearInterval(countdown);
+      $("#alarm-sound")[0].play(); // Toca o áudio
+      if (countType === "session"){
+        startBreak();
+      } else {
+        startSession();
       }
+    }
+  }, 1000);
+}
   
       function pause(){
         sessionNum--;
